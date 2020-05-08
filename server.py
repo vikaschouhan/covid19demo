@@ -171,8 +171,8 @@ def make_app(en_debug=False):
         "static_path"  : os.path.join(os.path.dirname(__file__), 'static'),
     }
     app_handlers = [
-            url(r'/preds', MainPageHandler),
-            url(r'/pred_audio', AudioPageHandler),
+            url(r'/pred', MainPageHandler),
+            url(r'/audio', AudioPageHandler),
         ]
 
     return Application(app_handlers, debug=en_debug, **settings)

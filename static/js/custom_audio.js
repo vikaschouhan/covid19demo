@@ -8,7 +8,7 @@ $(document).ready(function(){
 	};
     })(jQuery);
 
-    var audio_upload_url  = '/pred_audio';
+    var audio_upload_url  = '/audio';
     $.extend({ alert: function (message, title) {
         $("<div></div>").dialog( {
             buttons: { "Ok": function () { $(this).dialog("close"); } },
