@@ -125,6 +125,20 @@ def validate_form(form):
     return True, None
 # enddef
 
+@static('f', None)
+def get_form_format():
+    if get_form_format.f is None:
+        _f_t = {}
+        w_t = get_form_schema()
+        for key_t in w_t:
+            _f_t[key_t] = list(w_t[key_t]['weights'].keys())
+        # endfor
+        get_form_format.f = _f_t
+    # endif
+
+    return get_form_format.f
+# enddef
+
 @static('w', None)
 def get_form_weights():
     if get_form_weights.w is None:
