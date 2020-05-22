@@ -20,7 +20,7 @@ def get_form_schema():
             'dermatologic_change': {
                 'weights': {
                     'Yes': 3,
-                    'Yes but resolved by itself': 2,
+                    'Yes but resolved by it self': 2,
                     'No': 1,
                 },
                 'type': 'single',
