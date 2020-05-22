@@ -13,9 +13,9 @@ import multipart
 import operator
 from   io import BytesIO
 from   modules.utils import *
-from   modules.forms import *
-from   modules.audio import *
-from   modules.image import *
+
+# Global database dir
+database_dir = "./form_data"
 
 ############# Some boring stuff ################################
 def jresp(status_code, pay_load={}, message=''):
@@ -60,16 +60,6 @@ def decode_multiform_data(data):
     return d_d
 # enddef
 
-########## Predictor ######
-def predict_final_score(formdata=None, audio=None, image=None,
-        weights={'form': 0.95, 'audio': 0.03, 'image': 0.02}):
-    form_score   = predict_form(formdata) if formdata else 0.0
-    image_score  = predict_image_from_byte_stream(image) if image else 0.0
-    audio_score  = predict_audio_from_byte_stream(audio) if audio else 0.0
-
-    return (form_score*weights['form'] + image_score*weights['image'] + audio_score*weights['audio'])/sum(weights.values())
-# enddef
-
 ############# Interesting stuff ################################
 class BaseHandler0(RequestHandler):
     def set_default_headers(self):
@@ -86,33 +76,6 @@ class BaseHandler0(RequestHandler):
         self.finish()
 # endclass
 
-class AudioPageHandler(BaseHandler0):
-    async def get(self):
-        self.render('audio.html')
-    # enddef
-
-    async def post(self):
-        form_data = decode_multiform_data(self.request.body)
-        # Check if audio is present
-        if 'audio' not in form_data:
-            self.write(bad_request(message='No audio uploaded'))
-            self.finish()
-            return
-        # endif
-
-        # Calculate sick/non-sick score
-        audio = form_data['audio']['file'].read()
-        scores = predict_audio_all_from_byte_stream(audio)
-        # Convert to list of tuples
-        scores = sorted(scores.items(), key=operator.itemgetter(1), reverse=True)
-
-        # Response
-        json_payload = [{'scores': scores}]
-        self.write(jresp(status_code=200, pay_load=json_payload, message='Status OK'))
-        self.finish()
-    # enddef
-# endclass
-
 class MainPageHandler(BaseHandler0):
     async def post(self):
         form_data = decode_multiform_data(self.request.body)
@@ -120,10 +83,6 @@ class MainPageHandler(BaseHandler0):
         audio = None
         form  = None
 
-        # Read image and audio files
-        if 'image' in form_data:
-            image = form_data['image']['file'].read()
-        # endif
         if 'audio' in form_data:
             audio = form_data['audio']['file'].read()
         # endif
@@ -132,50 +91,35 @@ class MainPageHandler(BaseHandler0):
             form = form_data['formdata']['value']
         # endif
 
-        # Validate form
-        status, msg = validate_form(form)
-        if not status:
-            print(msg)
-            self.write(bad_request(message='Wrong form schema. {}'.format(msg)))
-            self.finish()
-            return
+        # Create new data
+        new_data_dir = '{}/p-{}'.format(database_dir, u4())
+        mkdir(new_data_dir)
+
+        # Dump records
+        if form:
+            with open('{}/form.json'.format(new_data_dir), 'w') as j_out:
+                json.dump(form, j_out)
+            # endwith
         # endif
-
-        # Final predictor
-        def _prediction_based_on_score(_score):
-            if _score >= 0.6:
-                return 'High Risk'
-            elif score >= 0.3:
-                return 'Medium Risk'
-            else:
-                return 'Low Risk'
-            # endif
-        # enddef
-
-        # Calculate final score
-        final_score = predict_final_score(form, audio, image)
-        pred_final  = _prediction_based_on_score(final_score)
-        json_payload = [{'scores': final_score, 'prediction': pred_final}]
-
-        self.write(jresp(status_code=200, pay_load=json_payload, message='Status OK'))
+        if audio:
+            with open('{}/audio.wav'.format(new_data_dir), 'wb') as a_out:
+                a_out.write(audio)
+            # endwith
+        # endif
+            
+        self.write(jresp(status_code=200, pay_load={}, message='Status OK'))
         self.finish()
     # enddef
-
 # endclass
 
 #######################################################
 # App routing control
 def make_app(en_debug=False):
-    settings = {
-        "template_path": os.path.join(os.path.dirname(__file__), 'templates'),
-        "static_path"  : os.path.join(os.path.dirname(__file__), 'static'),
-    }
     app_handlers = [
-            url(r'/pred', MainPageHandler),
-            url(r'/audio', AudioPageHandler),
+            url(r'/submit_form', MainPageHandler),
         ]
 
-    return Application(app_handlers, debug=en_debug, **settings)
+    return Application(app_handlers, debug=en_debug)
 # enddef
 
 ######################################################
