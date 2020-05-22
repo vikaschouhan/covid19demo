@@ -155,7 +155,7 @@ class MainPageHandler(BaseHandler0):
         # Calculate final score
         final_score = predict_final_score(form, audio, image)
         pred_final  = _prediction_based_on_score(final_score)
-        json_payload = [{'scores': final_score, 'prediction': pred_final}]
+        json_payload = [{'scores': precision(final_score, 4), 'prediction': pred_final}]
 
         self.write(jresp(status_code=200, pay_load=json_payload, message='Status OK'))
         self.finish()
