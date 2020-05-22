@@ -145,7 +145,7 @@ class MainPageHandler(BaseHandler0):
         def _prediction_based_on_score(_score):
             if _score >= 0.6:
                 return 'High Risk'
-            elif score >= 0.3:
+            elif _score >= 0.3:
                 return 'Medium Risk'
             else:
                 return 'Low Risk'
